@@ -9,6 +9,7 @@ Premium perfume e-commerce SaaS platform built with **Vite + React 18 + TypeScri
 - **Pages**: `src/pages/` - Route components (Dashboard, Catalog, OrderDetail, Index, NotFound)
 - **Shared Components**: `src/components/` - Business components (Header, PerfumeCard, StatsCard, OrderRow, AlertItem, NavLink)
 - **UI Primitives**: `src/components/ui/` - shadcn components (Button, Card, Badge, etc.)
+- **Integrations**: `src/integrations/supabase/` - Supabase client and database types
 - **Routing**: React Router v6 with catch-all 404 route (`<Route path="*">`)
 
 ### Import Aliases (Critical)
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 ### State & Data Management
 - **React Query**: Global data fetching via `@tanstack/react-query` with shared `QueryClient` in [src/App.tsx](src/App.tsx#L12)
+- **Supabase**: Backend-as-a-Service for database, auth, and storage. Client configured in [src/integrations/supabase/client.ts](src/integrations/supabase/client.ts)
 - **Toast Notifications**: Dual system using `sonner` and shadcn's `Toaster` (both initialized in App.tsx)
 - **Tooltips**: Global `TooltipProvider` wraps entire app
 
@@ -158,10 +160,73 @@ Follow shadcn's composition pattern:
 4. **Animations**: Follow the `initial/whileInView` pattern from existing components
 5. **Colors**: Use AURA design tokens, don't add arbitrary colors
 6. **Typography**: Maintain serif for headings, sans for body text
+7. **Database Operations**: Use Supabase client from `@/integrations/supabase` with React Query for caching
+
+## Supabase Integration
+
+### Database Queries
+Always use React Query with Supabase for automatic caching and refetching:
+
+```tsx
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase';
+
+// Fetching data
+export function usePerfumes() {
+  return useQuery({
+    queryKey: ['perfumes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('perfumes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// Mutations
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderData) => {
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+}
+```
+
+### Type Safety
+- Database types are defined in `src/integrations/supabase/types.ts`
+- Regenerate types after schema changes: `npx supabase gen types typescript --project-id "project-ref" > src/integrations/supabase/types.ts`
+- Import types: `import type { Database } from '@/integrations/supabase/types';`
+
+### Environment Variables
+Required in `.env.local`:
+```env
+VITE_SUPABASE_URL=https://project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGc...
+```
+
+Client validates these on initialization and will throw if missing.
 
 ## Troubleshooting
 
 - **Import Errors**: Verify `@/` alias works; check [vite.config.ts](vite.config.ts#L15)
 - **Styling Issues**: Ensure `src/index.css` is imported in [src/main.tsx](src/main.tsx#L3)
 - **Build Errors**: Check TypeScript relaxed settings aren't hiding issues
+- **Supabase Errors**: Verify `.env.local` exists with correct credentials; check SUPABASE_SETUP.md
 - **HMR Overlay**: Disabled intentionally in [vite.config.ts](vite.config.ts#L10)
