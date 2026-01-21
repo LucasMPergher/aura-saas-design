@@ -19,7 +19,6 @@ import auraLogo from "@/assets/aura-logo.png";
 const navItems = [
   { name: "Inicio", path: "/" },
   { name: "Catálogo", path: "/catalogo" },
-  { name: "Dashboard", path: "/dashboard" },
 ];
 
 export function Header() {
@@ -31,21 +30,21 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-card">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 flex-shrink-0">
             <img src={auraLogo} alt="AURA" className="h-10 w-10 md:h-12 md:w-12 rounded-full object-cover" />
             <span className="font-serif text-xl md:text-2xl font-semibold text-foreground">AURA</span>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Desktop Nav - Centrado */}
+          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative text-sm font-medium transition-colors hover:text-primary ${
+                className={`relative text-sm font-medium transition-colors hover:text-primary whitespace-nowrap ${
                   location.pathname === item.path ? "text-primary" : "text-muted-foreground"
                 }`}
               >
@@ -58,16 +57,27 @@ export function Header() {
                 )}
               </Link>
             ))}
+            {/* Dashboard link only for admins */}
+            {profile?.role === 'admin' && (
+              <Link
+                to="/dashboard"
+                className={`relative text-sm font-medium transition-colors hover:text-primary whitespace-nowrap ${
+                  location.pathname === '/dashboard' ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                Dashboard
+                {location.pathname === '/dashboard' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"
+                  />
+                )}
+              </Link>
+            )}
           </nav>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/dashboard">
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </Link>
-            </Button>
             <Button variant="ghost" size="sm" asChild className="relative">
               <Link to="/carrito">
                 <ShoppingBag className="w-4 h-4" />
@@ -180,12 +190,20 @@ export function Header() {
                   </Link>
                 </Button>
                 {profile?.role === 'admin' && (
-                  <Button variant="outline" asChild>
-                    <Link to="/admin" onClick={() => setIsOpen(false)}>
-                      <LayoutDashboard className="w-4 h-4 mr-2" />
-                      Admin
-                    </Link>
-                  </Button>
+                  <>
+                    <Button variant="outline" asChild>
+                      <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link to="/admin" onClick={() => setIsOpen(false)}>
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Admin
+                      </Link>
+                    </Button>
+                  </>
                 )}
                 <Button variant="destructive" onClick={() => { signOut(); setIsOpen(false); }}>
                   <LogOut className="w-4 h-4 mr-2" />

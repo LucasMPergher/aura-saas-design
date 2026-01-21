@@ -92,7 +92,14 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/catalogo" element={<Catalog />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
               <Route path="/pedido/:id" element={<OrderDetail />} />
               <Route path="/perfume/:id" element={<PerfumeDetail />} />
               <Route path="/carrito" element={<Cart />} />
