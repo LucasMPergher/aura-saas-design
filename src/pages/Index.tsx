@@ -94,7 +94,7 @@ const Index = () => {
             >
               <img
                 src={auraLogo}
-                alt="AURA"
+                alt="ESENCIA"
                 className="w-28 h-28 md:w-36 md:h-36 rounded-full shadow-float mx-auto"
               />
             </motion.div>

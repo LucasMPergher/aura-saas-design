@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import auraLogo from '@/assets/aura-logo.png';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { signIn, signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function Login() {
 
     try {
       await signIn(formData.email, formData.password);
-      navigate('/');
+      navigate(redirectTo);
     } catch (error) {
       // Error handled by AuthContext
     } finally {
@@ -53,8 +55,8 @@ export default function Login() {
       >
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <img src={auraLogo} alt="AURA" className="h-12 w-12 rounded-full object-cover" />
-          <span className="font-serif text-3xl font-semibold text-foreground">AURA</span>
+          <img src={auraLogo} alt="ESENCIA" className="h-12 w-12 rounded-full object-cover" />
+          <span className="font-serif text-3xl font-semibold text-foreground">ESENCIA</span>
         </Link>
 
         <Card className="bg-aura-night border-aura-smoke/20">
@@ -156,7 +158,10 @@ export default function Login() {
             {/* Register Link */}
             <div className="text-center text-sm">
               <span className="text-muted-foreground">¿No tenés cuenta? </span>
-              <Link to="/register" className="text-aura-gold hover:underline font-medium">
+              <Link 
+                to={redirectTo !== '/' ? `/register?redirect=${redirectTo}` : '/register'} 
+                className="text-aura-gold hover:underline font-medium"
+              >
                 Registrate
               </Link>
             </div>

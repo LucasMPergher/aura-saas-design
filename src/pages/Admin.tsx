@@ -22,7 +22,7 @@ export default function Admin() {
               </h1>
             </div>
             <p className="text-muted-foreground">
-              Gestión completa del sistema AURA
+              Gestión completa del sistema ESENCIA
             </p>
           </motion.div>
 

@@ -34,8 +34,8 @@ export function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <img src={auraLogo} alt="AURA" className="h-10 w-10 md:h-12 md:w-12 rounded-full object-cover" />
-            <span className="font-serif text-xl md:text-2xl font-semibold text-foreground">AURA</span>
+            <img src={auraLogo} alt="ESENCIA" className="h-10 w-10 md:h-12 md:w-12 rounded-full object-cover" />
+            <span className="font-serif text-xl md:text-2xl font-semibold text-foreground">ESENCIA</span>
           </Link>
 
           {/* Desktop Nav - Centrado */}

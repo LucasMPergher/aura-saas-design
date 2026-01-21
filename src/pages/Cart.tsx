@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,28 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, Trash2, Plus, Minus, MessageCircle, ArrowLeft } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSaveOrder } from "@/integrations/supabase/hooks/useOrders";
 import { toast } from "sonner";
 
 const Cart = () => {
+  const navigate = useNavigate();
   const { items, removeFromCart, updateQuantity, getSubtotal, getTotal, clearCart } = useCart();
+  const { user } = useAuth();
   const saveOrder = useSaveOrder();
 
   const handleWhatsAppOrder = async () => {
     if (items.length === 0) return;
+
+    // Verificar autenticación
+    if (!user) {
+      toast.error("Inicia sesión para continuar", {
+        description: "Necesitas una cuenta para realizar pedidos",
+      });
+      // Guardar la ruta actual para volver después del login
+      navigate('/login?redirect=/carrito');
+      return;
+    }
 
     try {
       // 1. Guardar pedido en Supabase
@@ -35,7 +48,7 @@ const Cart = () => {
       const order = await saveOrder.mutateAsync(orderData);
 
       // 2. Construir mensaje de WhatsApp
-      let message = `🛍️ *Pedido AURA #${order.order_number || order.id}*\n\n`;
+      let message = `🛍️ *Pedido ESENCIA #${order.order_number || order.id}*\n\n`;
       
       items.forEach((item, index) => {
         const status = item.inStock ? "✅ En stock" : "📦 A pedido";

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import auraLogo from '@/assets/aura-logo.png';
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const { signUp, signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -34,7 +36,8 @@ export default function Register() {
 
     try {
       await signUp(formData.email, formData.password, formData.fullName);
-      navigate('/login');
+      // Si hay redirección pendiente, pasarla al login
+      navigate(redirectTo ? `/login?redirect=${redirectTo}` : '/login');
     } catch (error) {
       // Error handled by AuthContext
     } finally {
@@ -63,8 +66,8 @@ export default function Register() {
       >
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <img src={auraLogo} alt="AURA" className="h-12 w-12 rounded-full object-cover" />
-          <span className="font-serif text-3xl font-semibold text-foreground">AURA</span>
+          <img src={auraLogo} alt="ESENCIA" className="h-12 w-12 rounded-full object-cover" />
+          <span className="font-serif text-3xl font-semibold text-foreground">ESENCIA</span>
         </Link>
 
         <Card className="bg-aura-night border-aura-smoke/20">
@@ -202,7 +205,10 @@ export default function Register() {
             {/* Login Link */}
             <div className="text-center text-sm">
               <span className="text-muted-foreground">¿Ya tenés cuenta? </span>
-              <Link to="/login" className="text-aura-gold hover:underline font-medium">
+              <Link 
+                to={redirectTo ? `/login?redirect=${redirectTo}` : '/login'} 
+                className="text-aura-gold hover:underline font-medium"
+              >
                 Iniciá sesión
               </Link>
             </div>
