@@ -5,30 +5,89 @@ import { OrderRow } from "@/components/OrderRow";
 import { AlertItem } from "@/components/AlertItem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ShoppingBag, Users, TrendingUp, Plus, Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, ShoppingBag, Users, TrendingUp, Plus, Bell, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useOrders } from "@/integrations/supabase/hooks/useOrders";
+import { useState } from "react";
 
-const stats = [
-  { title: "Ventas del mes", value: "$1.250.000", change: "+12%", changeType: "positive" as const, icon: DollarSign },
-  { title: "Pedidos", value: "47", change: "+8%", changeType: "positive" as const, icon: ShoppingBag },
-  { title: "Clientes nuevos", value: "23", change: "+15%", changeType: "positive" as const, icon: Users },
-  { title: "Tasa conversión", value: "4.2%", change: "-2%", changeType: "negative" as const, icon: TrendingUp },
-];
+interface OrderItem {
+  id: string;
+  perfume_id: string;
+  perfume_name: string;
+  perfume_brand: string;
+  quantity: number;
+  unit_price: number;
+  in_stock: boolean;
+}
 
-const recentOrders = [
-  { id: "AUR-001", customer: "María González", products: ["Oud Al Layl", "Raghba"], total: 73000, status: "pendiente" as const, date: "Hoy, 14:30" },
-  { id: "AUR-002", customer: "Carlos Rodríguez", products: ["Aventus"], total: 120000, status: "pagado" as const, date: "Hoy, 11:15" },
-  { id: "AUR-003", customer: "Ana Martínez", products: ["Bleu de Chanel"], total: 85000, status: "enviado" as const, date: "Ayer, 18:45" },
-  { id: "AUR-004", customer: "Lucas Fernández", products: ["Amber Oud", "Sultan Al Oud"], total: 90000, status: "entregado" as const, date: "17 Ene" },
-];
-
-const alerts = [
-  { type: "stock" as const, message: "Stock bajo: Oud Al Layl (2 unidades)", time: "Hace 2 horas" },
-  { type: "order" as const, message: "Nuevo pedido de María González", time: "Hace 3 horas" },
-  { type: "stock" as const, message: "Sin stock: Aventus - Creed", time: "Hace 5 horas" },
-];
+interface Order {
+  id: number;
+  order_number?: number;
+  customer_name?: string;
+  customer_phone?: string;
+  total_amount: number;
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "pendiente" | "pagado" | "enviado" | "entregado";
+  created_at: string;
+  order_items?: OrderItem[];
+}
 
 const Dashboard = () => {
+  const [showBackorders, setShowBackorders] = useState(false);
+  
+  // Fetch orders from Supabase
+  const { 
+    data: orders, 
+    isLoading, 
+    error 
+  } = useOrders({ 
+    hasBackorder: showBackorders ? true : undefined 
+  });
+
+  // Calculate stats from real data
+  const totalOrders = orders?.length || 0;
+  const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+  const backorderCount = orders?.filter(order => 
+    order.order_items?.some((item: OrderItem) => !item.in_stock)
+  ).length || 0;
+
+  const stats = [
+    { 
+      title: "Ventas del mes", 
+      value: `$${totalRevenue.toLocaleString()}`, 
+      change: "+12%", 
+      changeType: "positive" as const, 
+      icon: DollarSign 
+    },
+    { 
+      title: "Pedidos", 
+      value: totalOrders.toString(), 
+      change: "+8%", 
+      changeType: "positive" as const, 
+      icon: ShoppingBag 
+    },
+    { 
+      title: "Productos a pedido", 
+      value: backorderCount.toString(), 
+      change: showBackorders ? "Filtrado" : "", 
+      changeType: "neutral" as const, 
+      icon: Bell 
+    },
+    { 
+      title: "Tasa conversión", 
+      value: "4.2%", 
+      change: "-2%", 
+      changeType: "negative" as const, 
+      icon: TrendingUp 
+    },
+  ];
+
+  const alerts = [
+    { type: "stock" as const, message: "Stock bajo: Oud Al Layl (2 unidades)", time: "Hace 2 horas" },
+    { type: "order" as const, message: "Nuevo pedido recibido", time: "Hace 3 horas" },
+    { type: "stock" as const, message: "Sin stock: Aventus - Creed", time: "Hace 5 horas" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -74,16 +133,68 @@ const Dashboard = () => {
               className="lg:col-span-2"
             >
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="font-serif text-xl">Pedidos Recientes</CardTitle>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to="/pedidos">Ver todos</Link>
-                  </Button>
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-4">
+                    <CardTitle className="font-serif text-xl">Pedidos Recientes</CardTitle>
+                    <Button
+                      variant={showBackorders ? "gold" : "outline"}
+                      size="sm"
+                      onClick={() => setShowBackorders(!showBackorders)}
+                    >
+                      <Bell className="w-4 h-4 mr-2" />
+                      {showBackorders ? "Todos" : "Solo a pedido"}
+                    </Button>
+                  </div>
+                  {showBackorders && (
+                    <Badge variant="gold" className="w-fit">
+                      Mostrando solo productos a pedido
+                    </Badge>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {recentOrders.map((order) => (
-                    <OrderRow key={order.id} {...order} />
-                  ))}
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-aura-gold" />
+                    </div>
+                  ) : error ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Error al cargar pedidos</p>
+                      <p className="text-sm mt-2">Verifica la conexión con Supabase</p>
+                    </div>
+                  ) : orders && orders.length > 0 ? (
+                    orders.slice(0, 6).map((order: Order) => {
+                      const hasBackorder = order.order_items?.some((item: OrderItem) => !item.in_stock);
+                      const productNames = order.order_items?.map((item: OrderItem) => item.perfume_name) || [];
+                      
+                      return (
+                        <OrderRow
+                          key={order.id}
+                          id={`#${order.order_number || order.id}`}
+                          customer={order.customer_name || "Cliente"}
+                          products={productNames}
+                          total={order.total_amount}
+                          status={order.status}
+                          date={new Date(order.created_at).toLocaleDateString('es-AR', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                          hasBackorder={hasBackorder}
+                        />
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ShoppingBag className="w-12 h-12 mx-auto mb-3 text-aura-gold/50" />
+                      <p>No hay pedidos todavía</p>
+                      <p className="text-sm mt-2">
+                        {showBackorders 
+                          ? "No hay productos a pedido" 
+                          : "Los pedidos aparecerán aquí"}
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -116,4 +227,8 @@ const Dashboard = () => {
   );
 };
 
+
+
 export default Dashboard;
+
+

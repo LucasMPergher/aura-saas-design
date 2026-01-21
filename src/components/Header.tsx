@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { Menu, X, ShoppingBag, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useCart } from "@/contexts/CartContext";
 import auraLogo from "@/assets/aura-logo.png";
 
 const navItems = [
@@ -14,6 +16,8 @@ const navItems = [
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { getTotalItems } = useCart();
+  const cartItemsCount = getTotalItems();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-card">
@@ -54,9 +58,19 @@ export function Header() {
                 Dashboard
               </Link>
             </Button>
+            <Button variant="ghost" size="sm" asChild className="relative">
+              <Link to="/carrito">
+                <ShoppingBag className="w-4 h-4" />
+                Carrito
+                {cartItemsCount > 0 && (
+                  <Badge variant="gold" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    {cartItemsCount}
+                  </Badge>
+                )}
+              </Link>
+            </Button>
             <Button variant="gold" size="sm" asChild>
               <Link to="/catalogo">
-                <ShoppingBag className="w-4 h-4" />
                 Ver Catálogo
               </Link>
             </Button>
@@ -93,9 +107,19 @@ export function Header() {
                 {item.name}
               </Link>
             ))}
-            <Button variant="gold" className="mt-2" asChild>
+            <Button variant="outline" className="mt-2 relative" asChild>
+              <Link to="/carrito" onClick={() => setIsOpen(false)}>
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Carrito
+                {cartItemsCount > 0 && (
+                  <Badge variant="gold" className="ml-2">
+                    {cartItemsCount}
+                  </Badge>
+                )}
+              </Link>
+            </Button>
+            <Button variant="gold" asChild>
               <Link to="/catalogo" onClick={() => setIsOpen(false)}>
-                <ShoppingBag className="w-4 h-4" />
                 Ver Catálogo
               </Link>
             </Button>

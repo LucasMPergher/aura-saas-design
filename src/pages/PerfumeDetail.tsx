@@ -7,11 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, ShoppingCart, MessageCircle, Truck, Shield, Package } from "lucide-react";
 import { getPerfumeById } from "@/lib/perfumes-data";
-import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
 
 const PerfumeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const perfume = id ? getPerfumeById(id) : null;
 
   if (!perfume) {
@@ -39,9 +40,10 @@ const PerfumeDetail = () => {
   };
 
   const handleAddToCart = () => {
-    toast.success("Agregado al carrito", {
-      description: `${perfume.name} - $${perfume.price.toLocaleString()}`
-    });
+    if (perfume) {
+      addToCart(perfume);
+      navigate("/carrito");
+    }
   };
 
   return (

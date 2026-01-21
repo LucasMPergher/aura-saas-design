@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Eye } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import type { Perfume } from "@/lib/perfumes-data";
 
 interface PerfumeCardProps {
   id: string;
@@ -32,6 +34,25 @@ export function PerfumeCard({
   inStock,
   featured = false,
 }: PerfumeCardProps) {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    const perfume: Perfume = {
+      id,
+      name,
+      brand,
+      type,
+      price,
+      imageUrl,
+      inStock,
+      description: "",
+      notes: { top: [], heart: [], base: [] },
+      volume: "100ml",
+      concentration: "Eau de Parfum",
+    };
+    addToCart(perfume);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -55,7 +76,7 @@ export function PerfumeCard({
           
           {/* Quick Actions */}
           <div className="absolute bottom-4 left-4 right-4 flex gap-2 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-            <Button variant="gold" size="sm" className="flex-1">
+            <Button variant="gold" size="sm" className="flex-1" onClick={handleAddToCart}>
               <ShoppingCart className="w-4 h-4" />
               Agregar
             </Button>

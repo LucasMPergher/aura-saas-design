@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase";
+import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import Catalog from "./pages/Catalog";
 import Dashboard from "./pages/Dashboard";
 import OrderDetail from "./pages/OrderDetail";
 import PerfumeDetail from "./pages/PerfumeDetail";
+import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,19 +78,22 @@ const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/catalogo" element={<Catalog />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/pedido/:id" element={<OrderDetail />} />
-          <Route path="/perfume/:id" element={<PerfumeDetail />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <CartProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/catalogo" element={<Catalog />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/pedido/:id" element={<OrderDetail />} />
+            <Route path="/perfume/:id" element={<PerfumeDetail />} />
+            <Route path="/carrito" element={<Cart />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
     </TooltipProvider>
   </QueryClientProvider>
   );
