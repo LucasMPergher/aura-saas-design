@@ -4,36 +4,61 @@ import { PerfumeCard } from "@/components/PerfumeCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
-import perfume1 from "@/assets/perfume-1.jpg";
-import perfume2 from "@/assets/perfume-2.jpg";
-import perfume3 from "@/assets/perfume-3.jpg";
-import perfume4 from "@/assets/perfume-4.jpg";
-
-const allPerfumes = [
-  { id: "1", name: "Oud Al Layl", brand: "Lattafa", type: "Árabe" as const, price: 45000, imageUrl: perfume2, inStock: true },
-  { id: "2", name: "Aventus", brand: "Creed", type: "Nicho" as const, price: 120000, imageUrl: perfume1, inStock: false },
-  { id: "3", name: "Bleu de Chanel", brand: "Chanel", type: "Diseñador" as const, price: 85000, imageUrl: perfume3, inStock: true },
-  { id: "4", name: "Amber Oud", brand: "Al Haramain", type: "Árabe" as const, price: 38000, imageUrl: perfume4, inStock: true },
-  { id: "5", name: "Sauvage", brand: "Dior", type: "Diseñador" as const, price: 75000, imageUrl: perfume3, inStock: true },
-  { id: "6", name: "Raghba", brand: "Lattafa", type: "Árabe" as const, price: 28000, imageUrl: perfume2, inStock: true },
-  { id: "7", name: "Noir de Noir", brand: "Tom Ford", type: "Nicho" as const, price: 180000, imageUrl: perfume1, inStock: false },
-  { id: "8", name: "Sultan Al Oud", brand: "Swiss Arabian", type: "Árabe" as const, price: 52000, imageUrl: perfume4, inStock: true },
-];
+import { allPerfumes } from "@/lib/perfumes-data";
 
 const categories = ["Todos", "Árabe", "Diseñador", "Nicho"];
 
 const Catalog = () => {
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filtros adicionales
+  const [stockFilter, setStockFilter] = useState<"todos" | "stock" | "pedido">("todos");
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 200000]);
+
+  // Obtener marcas únicas
+  const uniqueBrands = Array.from(new Set(allPerfumes.map(p => p.brand))).sort();
 
   const filteredPerfumes = allPerfumes.filter((perfume) => {
     const matchesCategory = activeCategory === "Todos" || perfume.type === activeCategory;
     const matchesSearch = perfume.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       perfume.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesStock = stockFilter === "todos" || 
+      (stockFilter === "stock" && perfume.inStock) ||
+      (stockFilter === "pedido" && !perfume.inStock);
+    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(perfume.brand);
+    const matchesPrice = perfume.price >= priceRange[0] && perfume.price <= priceRange[1];
+    
+    return matchesCategory && matchesSearch && matchesStock && matchesBrand && matchesPrice;
   });
+
+  const toggleBrand = (brand: string) => {
+    setSelectedBrands(prev => 
+      prev.includes(brand) 
+        ? prev.filter(b => b !== brand)
+        : [...prev, brand]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setActiveCategory("Todos");
+    setSearchQuery("");
+    setStockFilter("todos");
+    setSelectedBrands([]);
+    setPriceRange([0, 200000]);
+  };
+
+  const hasActiveFilters = activeCategory !== "Todos" || searchQuery !== "" || 
+    stockFilter !== "todos" || selectedBrands.length > 0 || 
+    priceRange[0] !== 0 || priceRange[1] !== 200000;
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,13 +98,28 @@ const Catalog = () => {
                   className="pl-10 bg-card border-border"
                 />
               </div>
-              <Button variant="outline" size="icon" className="shrink-0">
+              <Button 
+                variant={showFilters ? "default" : "outline"} 
+                size="icon" 
+                className="shrink-0"
+                onClick={() => setShowFilters(!showFilters)}
+              >
                 <SlidersHorizontal className="w-5 h-5" />
               </Button>
+              {hasActiveFilters && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={clearAllFilters}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              )}
             </div>
 
             {/* Category Tabs */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-6">
               {categories.map((category) => (
                 <button
                   key={category}
@@ -94,6 +134,95 @@ const Catalog = () => {
                 </button>
               ))}
             </div>
+
+            {/* Advanced Filters Panel */}
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="grid md:grid-cols-3 gap-4 mb-6"
+              >
+                {/* Stock Filter */}
+                <Card className="bg-aura-night border-aura-smoke/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-aura-gold">Disponibilidad</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="stock-todos"
+                        checked={stockFilter === "todos"}
+                        onCheckedChange={() => setStockFilter("todos")}
+                      />
+                      <Label htmlFor="stock-todos" className="text-sm cursor-pointer">Todos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="stock-disponible"
+                        checked={stockFilter === "stock"}
+                        onCheckedChange={() => setStockFilter("stock")}
+                      />
+                      <Label htmlFor="stock-disponible" className="text-sm cursor-pointer">
+                        En stock
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="stock-pedido"
+                        checked={stockFilter === "pedido"}
+                        onCheckedChange={() => setStockFilter("pedido")}
+                      />
+                      <Label htmlFor="stock-pedido" className="text-sm cursor-pointer">
+                        A pedido
+                      </Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Brand Filter */}
+                <Card className="bg-aura-night border-aura-smoke/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-aura-gold">Marca</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 max-h-40 overflow-y-auto">
+                    {uniqueBrands.map((brand) => (
+                      <div key={brand} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`brand-${brand}`}
+                          checked={selectedBrands.includes(brand)}
+                          onCheckedChange={() => toggleBrand(brand)}
+                        />
+                        <Label htmlFor={`brand-${brand}`} className="text-sm cursor-pointer">
+                          {brand}
+                        </Label>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Price Filter */}
+                <Card className="bg-aura-night border-aura-smoke/20">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-aura-gold">Precio</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Slider
+                      min={0}
+                      max={200000}
+                      step={5000}
+                      value={priceRange}
+                      onValueChange={(value) => setPriceRange(value as [number, number])}
+                      className="w-full"
+                    />
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>${priceRange[0].toLocaleString()}</span>
+                      <span>${priceRange[1].toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Results Info */}

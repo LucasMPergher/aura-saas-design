@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const typeColors = {
 } as const;
 
 export function PerfumeCard({
+  id,
   name,
   brand,
   type,
@@ -57,8 +59,10 @@ export function PerfumeCard({
               <ShoppingCart className="w-4 h-4" />
               Agregar
             </Button>
-            <Button variant="outline" size="icon" className="shrink-0">
-              <Eye className="w-4 h-4" />
+            <Button variant="outline" size="icon" className="shrink-0" asChild>
+              <Link to={`/perfume/${id}`}>
+                <Eye className="w-4 h-4" />
+              </Link>
             </Button>
           </div>
 

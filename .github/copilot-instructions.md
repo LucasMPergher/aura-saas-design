@@ -3,6 +3,371 @@
 ## Project Overview
 Premium perfume e-commerce SaaS platform built with **Vite + React 18 + TypeScript**, using **shadcn/ui** components and **Tailwind CSS**. The design system implements a luxury "AURA" brand theme with deep blue (`#0B1C2D`) and gold (`#C9A24D`) accents.
 
+---
+
+## 🎯 Agent Skills System
+
+This project uses a **skill-based approach** for AI agents. When the user requests an action, identify which skill(s) apply and follow the corresponding workflow.
+
+### Available Skills
+
+#### 🎨 SKILL: Create UI Component
+**Triggers**: "create component", "add button", "new card", "build form"
+
+**Workflow**:
+1. **Determine type**: Business logic component OR UI primitive?
+   - Business → `src/components/` (e.g., ProductCard, UserProfile)
+   - Primitive → Use `npx shadcn@latest add <name>` (installs to `src/components/ui/`)
+2. **Apply AURA design system**:
+   - Colors: `bg-aura-deep`, `text-aura-gold`, `border-aura-smoke`
+   - Typography: `font-serif` for headings, `font-sans` for body
+   - Buttons: Use `variant="gold"` or `variant="gold-outline"`
+3. **Add animations** (see SKILL: Add Animation)
+4. **Use TypeScript interfaces** for props
+5. **Import with alias**: `import { Button } from "@/components/ui/button"`
+
+**Example Output**:
+```tsx
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+
+interface ProductCardProps {
+  title: string;
+  price: number;
+  featured?: boolean;
+}
+
+export function ProductCard({ title, price, featured }: ProductCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+    >
+      <Card className={cn("bg-aura-night", featured && "gold-glow")}>
+        {/* Content */}
+      </Card>
+    </motion.div>
+  );
+}
+```
+
+---
+
+#### 🎭 SKILL: Add Animation
+**Triggers**: "animate", "add motion", "fade in", "hover effect"
+
+**Workflow**:
+1. Import Framer Motion: `import { motion } from "framer-motion"`
+2. **Apply standard pattern**:
+   ```tsx
+   <motion.div
+     initial={{ opacity: 0, y: 20 }}
+     whileInView={{ opacity: 1, y: 0 }}
+     viewport={{ once: true }}
+     transition={{ duration: 0.5 }}
+     whileHover={{ y: -4 }}
+   >
+   ```
+3. **Variants for list items**:
+   ```tsx
+   const container = {
+     hidden: { opacity: 0 },
+     show: {
+       opacity: 1,
+       transition: { staggerChildren: 0.1 }
+     }
+   };
+   ```
+4. **Performance**: Always use `viewport={{ once: true }}` for entrance animations
+
+**Reference**: [src/components/PerfumeCard.tsx](../src/components/PerfumeCard.tsx#L31), [src/components/StatsCard.tsx](../src/components/StatsCard.tsx#L27)
+
+---
+
+#### 🗄️ SKILL: Integrate Supabase Data
+**Triggers**: "fetch from database", "save to supabase", "query data", "CRUD operations"
+
+**Workflow**:
+1. **Check setup**: Verify `.env.local` exists with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+   - If missing → Guide user to [CHECKLIST_SUPABASE.md](../CHECKLIST_SUPABASE.md)
+2. **Create React Query hook**:
+   ```tsx
+   import { useQuery, useMutation } from '@tanstack/react-query';
+   import { supabase } from '@/integrations/supabase';
+
+   export function useProducts() {
+     return useQuery({
+       queryKey: ['products'],
+       queryFn: async () => {
+         const { data, error } = await supabase
+           .from('products')
+           .select('*')
+           .order('created_at', { ascending: false });
+         
+         if (error) throw error;
+         return data;
+       },
+     });
+   }
+   ```
+3. **Handle mutations** with optimistic updates:
+   ```tsx
+   const queryClient = useQueryClient();
+   return useMutation({
+     mutationFn: async (newProduct) => {
+       const { data, error } = await supabase
+         .from('products')
+         .insert([newProduct])
+         .select()
+         .single();
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['products'] });
+     },
+   });
+   ```
+4. **Add toast notifications**: Use `import { toast } from "sonner"`
+
+**References**: 
+- [hooks.example.ts](../src/integrations/supabase/hooks.example.ts) - React Query patterns
+- [SupabaseExample.tsx](../src/pages/SupabaseExample.tsx) - Full CRUD component
+
+---
+
+#### 🛣️ SKILL: Add New Route
+**Triggers**: "create page", "add route", "new view"
+
+**Workflow**:
+1. **Create page component** in `src/pages/`:
+   ```tsx
+   export default function NewPage() {
+     return (
+       <div className="min-h-screen bg-aura-deep p-8">
+         <h1 className="font-serif text-3xl text-aura-gold">New Page</h1>
+       </div>
+     );
+   }
+   ```
+2. **Register route** in [src/App.tsx](../src/App.tsx) **BEFORE** the catch-all `<Route path="*">`:
+   ```tsx
+   <Route path="/new-route" element={<NewPage />} />
+   ```
+3. **Add navigation link** to [src/components/Header.tsx](../src/components/Header.tsx):
+   ```tsx
+   <NavLink to="/new-route">New Page</NavLink>
+   ```
+4. **Test 404 handling**: Verify catch-all still works for invalid routes
+
+---
+
+#### 🧪 SKILL: Write Tests
+**Triggers**: "add test", "test component", "unit test"
+
+**Workflow**:
+1. **Create test file** alongside component: `ComponentName.test.tsx`
+2. **Use Vitest + Testing Library**:
+   ```tsx
+   import { render, screen } from '@testing-library/react';
+   import { Button } from '@/components/ui/button';
+
+   describe('Button', () => {
+     it('renders with correct text', () => {
+       render(<Button>Click me</Button>);
+       expect(screen.getByText('Click me')).toBeInTheDocument();
+     });
+
+     it('handles click events', async () => {
+       const handleClick = vi.fn();
+       render(<Button onClick={handleClick}>Click</Button>);
+       
+       await userEvent.click(screen.getByText('Click'));
+       expect(handleClick).toHaveBeenCalledTimes(1);
+     });
+   });
+   ```
+3. **Run tests**: `npm run test:watch`
+4. **Mock Supabase**: Use `vi.mock('@/integrations/supabase')`
+
+**Reference**: [src/test/setup.ts](../src/test/setup.ts)
+
+---
+
+#### 🎨 SKILL: Apply AURA Styling
+**Triggers**: "make it look premium", "use brand colors", "style this"
+
+**Workflow**:
+1. **Background layers**:
+   - Base: `bg-aura-deep` (darkest)
+   - Cards: `bg-aura-night` (elevated)
+   - Overlays: `bg-aura-night/80` (translucent)
+2. **Text hierarchy**:
+   - Headings: `font-serif text-3xl font-bold text-aura-gold`
+   - Body: `font-sans text-aura-smoke`
+   - Links: `text-aura-gold hover:text-aura-gold/80`
+3. **Accents**:
+   - Borders: `border-aura-smoke/20`
+   - Shadows: `shadow-gold` or `gold-glow`
+   - Gradients: `gradient-gold` or `gradient-dark`
+4. **Buttons**:
+   - Primary: `<Button variant="gold">`
+   - Secondary: `<Button variant="gold-outline">`
+5. **Use cn() utility** for conditional classes:
+   ```tsx
+   className={cn("base-classes", condition && "conditional-class")}
+   ```
+
+**Color Tokens**:
+```css
+--aura-deep: 210 50% 11%;   /* #0B1C2D */
+--aura-night: 209 55% 16%;  /* #1A2B3D */
+--aura-gold: 42 47% 54%;    /* #C9A24D */
+--aura-smoke: 220 6% 57%;   /* #8A8E97 */
+```
+
+---
+
+#### 📦 SKILL: Install shadcn Component
+**Triggers**: "add dialog", "install select", "need accordion"
+
+**Workflow**:
+1. **Run CLI**: `npx shadcn@latest add <component-name>`
+2. **Verify installation**: Component appears in `src/components/ui/`
+3. **Import in your component**: `import { Dialog } from "@/components/ui/dialog"`
+4. **Follow composition pattern**:
+   ```tsx
+   <Dialog>
+     <DialogTrigger>Open</DialogTrigger>
+     <DialogContent>
+       <DialogHeader>
+         <DialogTitle>Title</DialogTitle>
+       </DialogHeader>
+     </DialogContent>
+   </Dialog>
+   ```
+
+**⚠️ NEVER edit files in `src/components/ui/` manually** - they're auto-generated
+
+---
+
+#### 🚀 SKILL: Debug and Troubleshoot
+**Triggers**: "not working", "error", "fix", "debug"
+
+**Workflow**:
+1. **Check common issues**:
+   - Import errors → Verify `@/` alias in imports
+   - Styling issues → Ensure `src/index.css` imported in `main.tsx`
+   - Supabase errors → Check `.env.local` exists and has correct credentials
+   - Build errors → Run `npm run build` to see TypeScript issues
+2. **Add console logs** for debugging:
+   ```tsx
+   console.log('[DEBUG] Component mounted with props:', props);
+   ```
+3. **Use React Query DevTools**:
+   ```tsx
+   import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+   // Add to App.tsx
+   ```
+4. **Check browser console** for errors
+5. **Verify environment variables**:
+   ```tsx
+   console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+   ```
+
+**Troubleshooting Guides**:
+- Supabase issues → [SUPABASE_SETUP.md](../SUPABASE_SETUP.md#troubleshooting)
+- General setup → [README.md](../README.md#development-local)
+
+---
+
+#### 📊 SKILL: Add State Management
+**Triggers**: "manage state", "share data", "global state"
+
+**Workflow**:
+1. **For server data**: Use React Query (already configured)
+   ```tsx
+   const { data, isLoading } = useQuery({ queryKey: ['key'], queryFn });
+   ```
+2. **For UI state**: Use React Context
+   ```tsx
+   const ThemeContext = createContext<Theme | null>(null);
+   export function ThemeProvider({ children }) {
+     const [theme, setTheme] = useState<Theme>('dark');
+     return (
+       <ThemeContext.Provider value={{ theme, setTheme }}>
+         {children}
+       </ThemeContext.Provider>
+     );
+   }
+   ```
+3. **For form state**: Use React Hook Form (if needed, install first)
+4. **Avoid prop drilling**: Lift state up or use Context
+
+---
+
+#### 🔒 SKILL: Implement Authentication
+**Triggers**: "add login", "authentication", "sign in", "user auth"
+
+**Workflow**:
+1. **Use Supabase Auth**:
+   ```tsx
+   import { supabase } from '@/integrations/supabase';
+
+   // Sign up
+   const { data, error } = await supabase.auth.signUp({
+     email: 'user@example.com',
+     password: 'password123'
+   });
+
+   // Sign in
+   const { data, error } = await supabase.auth.signInWithPassword({
+     email: 'user@example.com',
+     password: 'password123'
+   });
+
+   // Get current user
+   const { data: { user } } = await supabase.auth.getUser();
+   ```
+2. **Create auth context** for app-wide user state
+3. **Add protected routes**:
+   ```tsx
+   function ProtectedRoute({ children }) {
+     const { user, loading } = useAuth();
+     if (loading) return <div>Loading...</div>;
+     if (!user) return <Navigate to="/login" />;
+     return children;
+   }
+   ```
+4. **Handle auth state changes**:
+   ```tsx
+   useEffect(() => {
+     const { data: { subscription } } = supabase.auth.onAuthStateChange(
+       (event, session) => {
+         console.log('Auth event:', event, session);
+       }
+     );
+     return () => subscription.unsubscribe();
+   }, []);
+   ```
+
+---
+
+### 🎯 Skill Selection Logic
+
+When user makes a request:
+
+1. **Identify intent** from request keywords
+2. **Select matching skill(s)** from table above
+3. **Execute workflow** step by step
+4. **Verify completion** with user
+
+**Multi-skill tasks**: Some requests may require multiple skills (e.g., "Create a product page with database" = SKILL: Add New Route + SKILL: Integrate Supabase Data + SKILL: Create UI Component)
+
+---
+
 ## Architecture & Key Patterns
 
 ### Component Structure

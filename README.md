@@ -234,7 +234,20 @@ transition={{
 ---
 
 ## �️ Backend con Supabase
+### 📚 Guías de Configuración Disponibles
 
+El proyecto incluye **documentación completa** para configurar Supabase. Consulta según tu necesidad:
+
+| Archivo | Cuándo Usarlo | Tiempo |
+|---------|---------------|--------|
+| 🎯 [**CHECKLIST_SUPABASE.md**](CHECKLIST_SUPABASE.md) | **Empieza aquí** - Lista interactiva paso a paso | 10-15 min |
+| ⚡ [**QUICKSTART_SUPABASE.md**](QUICKSTART_SUPABASE.md) | Resumen rápido para setup básico | 5 min |
+| 📖 [**SUPABASE_SETUP.md**](SUPABASE_SETUP.md) | Guía completa con troubleshooting y features avanzados | 20-30 min |
+| 🔄 [**SUPABASE_INTEGRATION_GUIDE.md**](SUPABASE_INTEGRATION_GUIDE.md) | Plantilla reutilizable para otros proyectos | Referencia |
+| 🗄️ [**supabase/schema.sql**](supabase/schema.sql) | Schema SQL completo con 7 tablas listo para ejecutar | - |
+| 💻 [**src/pages/SupabaseExample.tsx**](src/pages/SupabaseExample.tsx) | Componente CRUD funcional de ejemplo | - |
+| 🎣 [**src/integrations/supabase/hooks.example.ts**](src/integrations/supabase/hooks.example.ts) | Patrones de React Query + Supabase | - |
+| 📂 [**src/integrations/supabase/README.md**](src/integrations/supabase/README.md) | Documentación técnica del módulo | - |
 ### Configuración Inicial
 
 El proyecto está pre-configurado para conectarse con Supabase. Sigue estos pasos:
@@ -248,7 +261,9 @@ VITE_SUPABASE_URL=https://tuprojectref.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-📚 **Guía completa paso a paso**: [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+🎯 **¿Primera vez?** → Sigue el [CHECKLIST_SUPABASE.md](CHECKLIST_SUPABASE.md) paso a paso  
+📚 **¿Necesitas detalles?** → Lee el [SUPABASE_SETUP.md](SUPABASE_SETUP.md) completo  
+⚡ **¿Setup rápido?** → Usa el [QUICKSTART_SUPABASE.md](QUICKSTART_SUPABASE.md) de 5 minutos
 
 ### Uso Básico
 
@@ -473,11 +488,18 @@ Si trabajas con agentes de IA (GitHub Copilot, Cursor, Cline, etc.), consulta [.
 ## 📚 Recursos Adicionales
 
 ### Documentación del Proyecto
-- 📘 [Configuración completa de Supabase](SUPABASE_SETUP.md) - Guía paso a paso detallada
-- 🚀 [Quick Start Supabase](QUICKSTART_SUPABASE.md) - Inicio rápido en 5 minutos
-- 🗄️ [Schema SQL completo](supabase/schema.sql) - Schema de base de datos listo para usar
-- 💻 [Ejemplo de componente](src/pages/SupabaseExample.tsx) - CRUD completo con Supabase
-- 🎣 [Hooks de ejemplo](src/integrations/supabase/hooks.example.ts) - Patrones de React Query
+
+**Configuración de Supabase:**
+- 🎯 [**CHECKLIST_SUPABASE.md**](CHECKLIST_SUPABASE.md) - **START HERE** - Checklist paso a paso
+- ⚡ [**QUICKSTART_SUPABASE.md**](QUICKSTART_SUPABASE.md) - Setup rápido en 5 minutos
+- 📖 [**SUPABASE_SETUP.md**](SUPABASE_SETUP.md) - Guía completa y detallada
+- 🔄 [**SUPABASE_INTEGRATION_GUIDE.md**](SUPABASE_INTEGRATION_GUIDE.md) - Plantilla para otros proyectos
+- 🗄️ [**supabase/schema.sql**](supabase/schema.sql) - Schema de base de datos listo para usar
+- 📂 [**src/integrations/supabase/README.md**](src/integrations/supabase/README.md) - Documentación del módulo
+
+**Ejemplos de Código:**
+- 💻 [**src/pages/SupabaseExample.tsx**](src/pages/SupabaseExample.tsx) - Componente CRUD completo funcional
+- 🎣 [**src/integrations/supabase/hooks.example.ts**](src/integrations/supabase/hooks.example.ts) - Patrones de React Query
 
 ### Herramientas y Referencias
 - [Supabase Dashboard](https://supabase.com/dashboard)

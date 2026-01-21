@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Ejemplo de Custom Hook para usar Supabase con React Query
  * 
@@ -5,14 +6,15 @@
  * con React Query en el proyecto Aura SaaS Design.
  */
 
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase';
 import type { Database } from '@/integrations/supabase/types';
 
 // Tipos de ejemplo (actualiza según tu schema de Supabase)
-type Perfume = Database['public']['Tables']['perfumes']['Row'];
-type NewPerfume = Database['public']['Tables']['perfumes']['Insert'];
-type Order = Database['public']['Tables']['orders']['Row'];
+type Perfume = any; // Database['public']['Tables']['perfumes']['Row'];
+type NewPerfume = any; // Database['public']['Tables']['perfumes']['Insert'];
+type Order = any; // Database['public']['Tables']['orders']['Row'];
 
 /**
  * Hook para obtener todos los perfumes
