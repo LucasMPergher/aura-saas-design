@@ -1,10 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, X, ShoppingBag, LayoutDashboard } from "lucide-react";
+import { Menu, X, ShoppingBag, LayoutDashboard, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import auraLogo from "@/assets/aura-logo.png";
 
 const navItems = [
@@ -17,6 +26,7 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { getTotalItems } = useCart();
+  const { user, profile, signOut } = useAuth();
   const cartItemsCount = getTotalItems();
 
   return (
@@ -69,11 +79,54 @@ export function Header() {
                 )}
               </Link>
             </Button>
-            <Button variant="gold" size="sm" asChild>
-              <Link to="/catalogo">
-                Ver Catálogo
-              </Link>
-            </Button>
+
+            {/* User Menu or Login */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User className="w-4 h-4" />
+                    {profile?.full_name?.split(' ')[0] || 'Cuenta'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/account" className="cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Perfil
+                    </Link>
+                  </DropdownMenuItem>
+                  {profile?.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer">
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Admin
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">
+                    Ingresar
+                  </Link>
+                </Button>
+                <Button variant="gold" size="sm" asChild>
+                  <Link to="/register">
+                    Registrarse
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -118,11 +171,41 @@ export function Header() {
                 )}
               </Link>
             </Button>
-            <Button variant="gold" asChild>
-              <Link to="/catalogo" onClick={() => setIsOpen(false)}>
-                Ver Catálogo
-              </Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/account" onClick={() => setIsOpen(false)}>
+                    <User className="w-4 h-4 mr-2" />
+                    Mi cuenta
+                  </Link>
+                </Button>
+                {profile?.role === 'admin' && (
+                  <Button variant="outline" asChild>
+                    <Link to="/admin" onClick={() => setIsOpen(false)}>
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Admin
+                    </Link>
+                  </Button>
+                )}
+                <Button variant="destructive" onClick={() => { signOut(); setIsOpen(false); }}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Cerrar sesión
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/login" onClick={() => setIsOpen(false)}>
+                    Ingresar
+                  </Link>
+                </Button>
+                <Button variant="gold" asChild>
+                  <Link to="/register" onClick={() => setIsOpen(false)}>
+                    Registrarse
+                  </Link>
+                </Button>
+              </>
+            )}
           </nav>
         </motion.div>
       )}
