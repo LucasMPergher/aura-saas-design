@@ -16,11 +16,25 @@ import PerfumeDetail from "./pages/PerfumeDetail";
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
+import DebugAuth from "./pages/DebugAuth";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// ⚡ Configuración optimizada de React Query para mejor performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos - los datos se consideran frescos
+      gcTime: 10 * 60 * 1000, // 10 minutos - mantener en cache (antes cacheTime)
+      retry: 1, // Solo 1 reintento en caso de error
+      refetchOnWindowFocus: false, // No refetch al cambiar de pestaña
+      refetchOnMount: false, // No refetch al montar si hay cache
+    },
+  },
+});
 
 const App = () => {
   // 🔍 Debug: Verificar conexión con Supabase al iniciar la app
@@ -105,6 +119,9 @@ const App = () => {
               <Route path="/carrito" element={<Cart />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/debug-auth" element={<DebugAuth />} />
               <Route 
                 path="/account" 
                 element={

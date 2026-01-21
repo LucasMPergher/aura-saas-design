@@ -353,6 +353,119 @@ export function ProductCard({ title, price, featured }: ProductCardProps) {
    }, []);
    ```
 
+**⚠️ IMPORTANT NOTES:**
+- **AuthContext** (`src/contexts/AuthContext.tsx`) manages user state globally
+- **NO cache system** - Always fetches profile fresh from Supabase to avoid stale data
+- **Roles**: 'cliente' (default) and 'admin' stored in `profiles.role`
+- **Admin UI**: Header shows 👑 crown icon, "Dashboard" link, gold-outlined button
+- **Logout**: Clears all state + localStorage + forces page reload to `/`
+
+**Debug Auth Issues:**
+- Use `/debug-auth` page to inspect user, profile, and role state
+- Check browser console for `[AUTH]` logs during login/logout
+- Verify `profiles` table has correct role in Supabase Dashboard
+
+---
+
+#### 🔐 SKILL: Manage User Roles & Permissions
+**Triggers**: "admin", "roles", "permissions", "access control"
+
+**Workflow**:
+1. **Check current role**:
+   ```tsx
+   const { profile, isAdmin } = useAuth();
+   // profile.role === 'admin' or 'cliente'
+   // isAdmin is computed: profile?.role === 'admin'
+   ```
+
+2. **Protect admin routes**:
+   ```tsx
+   <Route path="/dashboard" element={
+     <ProtectedRoute requireAdmin={true}>
+       <Dashboard />
+     </ProtectedRoute>
+   } />
+   ```
+
+3. **Conditional UI based on role**:
+   ```tsx
+   {profile?.role === 'admin' && (
+     <Button variant="gold">Admin Only Action</Button>
+   )}
+   ```
+
+4. **Change user role in Supabase**:
+   ```sql
+   UPDATE profiles 
+   SET role = 'admin'
+   WHERE id = 'user-uuid-here';
+   ```
+
+**Admin Features:**
+- Dashboard access (`/dashboard`)
+- Admin panel (`/admin`)
+- Crown emoji 👑 in header
+- Gold-outlined user button
+- Special badge in dropdown menu
+
+**⚠️ CRITICAL - Supabase RLS Policies:**
+```sql
+-- ✅ CORRECT: No recursion
+CREATE POLICY "authenticated_can_view_all_profiles"
+  ON profiles FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- ❌ WRONG: Causes infinite recursion
+CREATE POLICY "admins_can_view_all"
+  ON profiles FOR SELECT
+  USING (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin'
+  );
+```
+
+**Troubleshooting:**
+- Error "infinite recursion detected" → Fix RLS policies (see above)
+- Role not updating → Clear localStorage, logout, login again
+- `isAdmin: FALSE` but Supabase shows 'admin' → Use `/debug-auth` to refresh profile
+
+---
+
+#### 🔄 SKILL: Password Recovery
+**Triggers**: "forgot password", "reset password", "recover account"
+
+**Workflow**:
+1. **User flow**:
+   - Login page → "¿Olvidaste tu contraseña?" link
+   - Enter email → Receives recovery email from Supabase
+   - Click link in email → Redirected to `/reset-password`
+   - Enter new password → Account recovered
+
+2. **Send recovery email**:
+   ```tsx
+   const { resetPassword } = useAuth();
+   await resetPassword('user@example.com');
+   ```
+
+3. **Update password** (after receiving token):
+   ```tsx
+   const { updatePassword } = useAuth();
+   await updatePassword('newPassword123');
+   ```
+
+**Implementation:**
+- `/forgot-password` - Request recovery email page
+- `/reset-password` - Set new password page (validates token from URL)
+- AuthContext provides `resetPassword()` and `updatePassword()` functions
+- Email templates configurable in Supabase Dashboard → Authentication → Email Templates
+
+**Supabase Configuration Required:**
+- **Site URL**: `http://localhost:8080` (or production domain)
+- **Redirect URLs**: `http://localhost:8080/reset-password`, `http://localhost:8080/**`
+- Configure in: Supabase Dashboard → Authentication → URL Configuration
+
+**Reference**: [FORGOT_PASSWORD_SETUP.md](../FORGOT_PASSWORD_SETUP.md)
+
 ---
 
 ### 🎯 Skill Selection Logic
@@ -385,8 +498,20 @@ import { cn } from "@/lib/utils";
 ```
 
 ### State & Data Management
-- **React Query**: Global data fetching via `@tanstack/react-query` with shared `QueryClient` in [src/App.tsx](src/App.tsx#L12)
-- **Supabase**: Backend-as-a-Service for database, auth, and storage. Client configured in [src/integrations/supabase/client.ts](src/integrations/supabase/client.ts)
+- **React Query**: Global data fetching via `@tanstack/react-query` with optimized config
+  - `staleTime: 5 minutes` - Data considered fresh
+  - `gcTime: 10 minutes` - Cache retention
+  - `refetchOnWindowFocus: false` - No refetch on tab switch
+  - `refetchOnMount: false` - Use cache if available
+- **Supabase**: Backend-as-a-Service for database, auth, and storage
+  - Client configured in [src/integrations/supabase/client.ts](src/integrations/supabase/client.ts)
+  - Optimized with PKCE flow and explicit storage
+  - No built-in cache - always fresh data from DB
+- **AuthContext**: Global authentication state
+  - User, profile (with role), session
+  - Functions: signIn, signUp, signOut, resetPassword, updatePassword, refreshProfile
+  - **NO cache** - Always fetches fresh profile to avoid stale roles
+- **CartContext**: Shopping cart state management
 - **Toast Notifications**: Dual system using `sonner` and shadcn's `Toaster` (both initialized in App.tsx)
 - **Tooltips**: Global `TooltipProvider` wraps entire app
 
@@ -475,8 +600,17 @@ This project integrates with Lovable's component tagging system:
 All routes defined in [src/App.tsx](src/App.tsx#L18-L24):
 - `/` - Index (landing page)
 - `/catalogo` - Product catalog
-- `/dashboard` - Admin dashboard
+- `/dashboard` - Admin dashboard (protected, admin only)
+- `/admin` - Admin panel (protected, admin only)
+- `/account` - User profile (protected)
 - `/pedido/:id` - Order detail (dynamic route)
+- `/perfume/:id` - Product detail (dynamic route)
+- `/carrito` - Shopping cart
+- `/login` - Login page
+- `/register` - Registration page
+- `/forgot-password` - Password recovery request
+- `/reset-password` - Password reset (with token)
+- `/debug-auth` - Auth debugging tool (development only)
 
 **Important**: Add custom routes **above** the `<Route path="*">` catch-all.
 
@@ -517,11 +651,118 @@ Follow shadcn's composition pattern:
 </Card>
 ```
 
-## When Adding Features
+## WAuthentication & User Management
+**Tables:**
+- `auth.users` - Supabase managed, stores email/password
+- `profiles` - Custom table with `id` (FK to auth.users), `role`, `full_name`, `avatar_url`, `created_at`
 
-1. **New Pages**: Add to `src/pages/`, register route in [src/App.tsx](src/App.tsx) **before** catch-all
-2. **Reusable Components**: Add to `src/components/` (not `/ui/` - that's for shadcn primitives)
-3. **New shadcn Components**: Run `npx shadcn@latest add <component>` to auto-install to `src/components/ui/`
+**Roles:**
+- `cliente` - Default role for new users
+- `admin` - Full access to dashboard and admin panel
+
+**Creating Admin Users:**
+```sql
+-- After user registers, promote to admin
+UPDATE profiles 
+SET role = 'admin'
+WHERE id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');
+```
+
+**Row Level Security (RLS) Policies:**
+```sql
+-- ✅ Allow authenticated users to read all profiles
+CREATE POLICY "authenticated_can_view_all_profiles"
+  ON profiles FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Users can update their own profile only
+CREATE POLICY "users_can_update_own_profile"
+  ON profiles FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = id);
+
+-- Users can insert their own profile (for signup)
+CREATE POLICY "users_can_insert_own_profile"
+  ON profiles FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = id);
+```
+
+**⚠️ AVOID**: Policies that query the same table (causes infinite recursion)
+
+**Trigger for Auto-Creating Profiles:**
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, role)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+    'cliente'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
+```
+
+### Common Issues
+
+**Authentication Problems:**
+- **Role not updating**: Clear localStorage → Logout → Login again
+- **"infinite recursion detected in policy"**: Fix RLS policies (avoid querying same table in USING clause)
+- **Profile is NULL but user exists**: Check if profile was created in `profiles` table
+- **isAdmin: FALSE but Supabase shows admin**: Use `/debug-auth` to force refresh profile
+- **Can't access admin routes**: Verify `profile.role === 'admin'` in `/debug-auth`
+
+**Supabase Connection:**
+- Error "Invalid URL" → Verify `.env.local` exists with correct `VITE_SUPABASE_URL`
+- "Failed to fetch" → Restart server after creating `.env.local`
+- "relation 'table_name' does not exist" → Execute schema SQL in Supabase SQL Editor
+- "permission denied for table" → Check RLS policies are configured
+
+**Performance Issues:**
+- Slow login/profile load → Check Supabase region (closer is better)
+- Data not updating → React Query is caching (5min staleTime by default)
+- Multiple fetches → Check if `refetchOnMount` or `refetchOnWindowFocus` enabled
+
+**General:**
+- **Import Errors**: Verify `@/` alias works; check [vite.config.ts](vite.config.ts#L15)
+- **Styling Issues**: Ensure `src/index.css` is imported in [src/main.tsx](src/main.tsx#L3)
+- **Build Errors**: Check TypeScript relaxed settings aren't hiding issues
+- **HMR Overlay**: Disabled intentionally in [vite.config.ts](vite.config.ts#L10)
+
+### Debug Tools
+- **`/debug-auth`** - Inspect user, profile, role, and isAdmin state
+- **Browser Console** - Look for `[AUTH]` logs during auth operations
+- **React Query DevTools** - Monitor query cache and network requests
+- **Supabase Dashboard** - Verify data directly in database tables
+
+### Useful SQL Queries
+```sql
+-- Check user's profile and role
+SELECT u.email, p.role, p.full_name, p.created_at
+FROM auth.users u
+LEFT JOIN profiles p ON u.id = p.id
+WHERE u.email = 'user@example.com';
+
+-- List all admins
+SELECT u.email, p.full_name, p.created_at
+FROM auth.users u
+JOIN profiles p ON u.id = p.id
+WHERE p.role = 'admin';
+
+-- View RLS policies
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+FROM pg_policies
+WHERE tablename = 'profiles';
+```tall to `src/components/ui/`
 4. **Animations**: Follow the `initial/whileInView` pattern from existing components
 5. **Colors**: Use AURA design tokens, don't add arbitrary colors
 6. **Typography**: Maintain serif for headings, sans for body text

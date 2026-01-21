@@ -61,11 +61,11 @@ export function Header() {
             {profile?.role === 'admin' && (
               <Link
                 to="/dashboard"
-                className={`relative text-sm font-medium transition-colors hover:text-primary whitespace-nowrap ${
+                className={`relative text-sm font-medium transition-colors hover:text-primary whitespace-nowrap flex items-center gap-1 ${
                   location.pathname === '/dashboard' ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                Dashboard
+                👑 Dashboard
                 {location.pathname === '/dashboard' && (
                   <motion.div
                     layoutId="activeTab"
@@ -94,13 +94,31 @@ export function Header() {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <User className="w-4 h-4" />
+                  <Button 
+                    variant={profile?.role === 'admin' ? 'gold-outline' : 'outline'} 
+                    size="sm" 
+                    className="gap-2"
+                  >
+                    {profile?.role === 'admin' ? '👑' : <User className="w-4 h-4" />}
                     {profile?.full_name?.split(' ')[0] || 'Cuenta'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {profile?.full_name || 'Usuario'}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                      {profile?.role === 'admin' && (
+                        <Badge variant="gold" className="text-[10px] w-fit mt-1">
+                          👑 Admin
+                        </Badge>
+                      )}
+                    </div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/account" className="cursor-pointer">
@@ -109,12 +127,20 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                   {profile?.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin" className="cursor-pointer">
-                        <LayoutDashboard className="w-4 h-4 mr-2" />
-                        Admin
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/dashboard" className="cursor-pointer text-aura-gold">
+                          <LayoutDashboard className="w-4 h-4 mr-2" />
+                          Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer text-aura-gold">
+                          <LayoutDashboard className="w-4 h-4 mr-2" />
+                          Panel Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">

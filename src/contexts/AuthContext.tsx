@@ -20,6 +20,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (newPassword: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAdmin: boolean;
 }
 
@@ -32,42 +35,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   // Fetch user profile from profiles table
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, forceRefresh = false) => {
     try {
+      console.log('🔍 [AUTH] Fetching profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, role, full_name, avatar_url, created_at')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      setProfile(data as UserProfile);
+      console.log('📦 [AUTH] Query result - data:', data);
+      console.log('📦 [AUTH] Query result - error:', error);
+
+      if (error) {
+        console.error('❌ [AUTH] Error fetching profile:', error);
+        throw error;
+      }
+
+      if (!data) {
+        console.error('❌ [AUTH] No profile data returned');
+        return;
+      }
+      
+      const profileData = data as UserProfile;
+      console.log('✅ [AUTH] Profile fetched successfully:', profileData);
+      console.log('📋 [AUTH] Role from DB:', profileData.role);
+      console.log('👑 [AUTH] Is Admin:', profileData.role === 'admin');
+      
+      setProfile(profileData);
+      console.log('💾 [AUTH] Profile set in state');
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('❌ [AUTH] Error in fetchProfile:', error);
       setProfile(null);
+    }
+  };
+
+  // Función pública para refrescar el perfil manualmente
+  const refreshProfile = async () => {
+    if (user) {
+      console.log('🔄 [AUTH] Refreshing profile...');
+      await fetchProfile(user.id, true); // Force refresh
     }
   };
 
   // Initialize auth state
   useEffect(() => {
+    console.log('🚀 [AUTH] Initializing auth state...');
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('📦 [AUTH] Session:', session ? 'Exists' : 'None');
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        console.log('👤 [AUTH] User found, fetching profile...');
+        fetchProfile(session.user.id, true); // Force refresh on init
       }
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log('🔔 [AUTH] Auth state changed:', event);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          console.log('👤 [AUTH] User changed, fetching profile...');
+          await fetchProfile(session.user.id, true); // Force refresh on auth change
         } else {
           setProfile(null);
         }
@@ -153,15 +190,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out
   const signOut = async () => {
     try {
+      // Limpiar estado local primero
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
+      // Cerrar sesión en Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // Limpiar cache y localStorage
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
 
       toast.success('Sesión cerrada', {
         description: 'Hasta pronto',
       });
+      
+      // Forzar recarga de la página para limpiar todo el estado
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
     } catch (error) {
       const authError = error as AuthError;
       toast.error('Error al cerrar sesión', {
+        description: authError.message,
+      });
+      throw error;
+    }
+  };
+
+  // Reset password - envía email de recuperación
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Email enviado', {
+        description: 'Revisa tu bandeja de entrada para resetear tu contraseña',
+      });
+    } catch (error) {
+      const authError = error as AuthError;
+      toast.error('Error al enviar email', {
+        description: authError.message,
+      });
+      throw error;
+    }
+  };
+
+  // Update password - para cuando el usuario tiene el token de recuperación
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success('Contraseña actualizada', {
+        description: 'Tu contraseña ha sido cambiada exitosamente',
+      });
+    } catch (error) {
+      const authError = error as AuthError;
+      toast.error('Error al actualizar contraseña', {
         description: authError.message,
       });
       throw error;
@@ -179,6 +273,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signInWithGoogle,
     signOut,
+    resetPassword,
+    updatePassword,
     isAdmin,
   };
 

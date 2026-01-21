@@ -13,5 +13,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce', // Más seguro y rápido
+    storage: window.localStorage, // Explicit storage
+  },
+  global: {
+    headers: {
+      'x-client-info': 'aura-saas-web',
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  // Optimizaciones de realtime (si usas subscriptions)
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // Limitar eventos
+    },
   },
 });

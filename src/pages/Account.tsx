@@ -76,11 +76,19 @@ export default function Account() {
 
                   <div className="flex items-start gap-3">
                     <Shield className="w-4 h-4 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Rol</p>
-                      <Badge variant={profile.role === 'admin' ? 'gold' : 'secondary'}>
-                        {profile.role === 'admin' ? 'Administrador' : 'Cliente'}
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-2">Tipo de cuenta</p>
+                      <Badge 
+                        variant={profile.role === 'admin' ? 'gold' : 'secondary'}
+                        className="text-sm"
+                      >
+                        {profile.role === 'admin' ? '👑 Administrador' : '👤 Cliente'}
                       </Badge>
+                      {profile.role === 'admin' && (
+                        <p className="text-xs text-aura-gold/60 mt-2">
+                          Tenés acceso completo al dashboard y panel de administración
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -116,24 +124,37 @@ export default function Account() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {profile.role === 'admin' && (
+                    <>
+                      <Button
+                        variant="gold"
+                        className="w-full justify-start"
+                        onClick={() => navigate('/dashboard')}
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Dashboard Admin
+                      </Button>
+                      
+                      <Button
+                        variant="gold-outline"
+                        className="w-full justify-start"
+                        onClick={() => navigate('/admin')}
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Panel de administración
+                      </Button>
+
+                      <Separator className="bg-aura-smoke/20" />
+                    </>
+                  )}
+
                   <Button
                     variant="outline"
                     className="w-full justify-start"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate('/catalogo')}
                   >
-                    Ver mis pedidos
+                    Ver catálogo
                   </Button>
-
-                  {profile.role === 'admin' && (
-                    <Button
-                      variant="gold-outline"
-                      className="w-full justify-start"
-                      onClick={() => navigate('/admin')}
-                    >
-                      <Shield className="w-4 h-4 mr-2" />
-                      Panel de administración
-                    </Button>
-                  )}
 
                   <Separator className="bg-aura-smoke/20" />
 
